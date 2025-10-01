@@ -1,0 +1,3 @@
+# --- v1 WEBSITE ONLY: ignore legacy app code ---
+src/features/**
+src/scripts/ui.js

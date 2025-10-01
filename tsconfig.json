@@ -39,5 +39,5 @@
     "service-worker.ts",
     "types/**/*.d.ts"
   ],
-  "exclude": ["node_modules", "build", "dist", "coverage"]
+  "exclude": ["node_modules", "build", "dist", "coverage", "src/features/**/*"]
 }
