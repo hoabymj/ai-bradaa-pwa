@@ -11,11 +11,20 @@ Malaysia-first PWA with AI Bradaa (VAB) persona. Built for lean, scalable execut
 
 > Check package.json → "scripts" to confirm/adjust the commands above.
 
+## Smoke tests
+
+This repo includes 2 smoke tests that run in CI/CD:
+
+1. Build check (fails on compile error): `npm run smoke:build`
+2. AI function check (needs SITE_URL): `npm run smoke:ai`
+
 ## PDPA / Safety
 
 - No secrets in repo (.env ignored).
 - Minimum data collection; Barakah-safe examples.
 - Logs exclude personal data by default.
+- Production AI proxy & analytics use proper CORS.
+- Security headers set in netlify.toml.
 
 ## Structure (high level)
 

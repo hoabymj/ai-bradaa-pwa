@@ -15,7 +15,13 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node", "jest", "react", "react-dom", "@testing-library/jest-dom"],
+
+    /* Only type libraries that actually come from @types */
+    "types": ["node", "jest", "react", "react-dom"],
+
+    /* If you previously added "typeRoots", remove it.
+       Default resolution will pick up @types automatically. */
+
     "baseUrl": "src",
     "paths": {
       "@features/*": ["features/*"],
@@ -26,6 +32,12 @@
       "@i18n/*": ["i18n/*"]
     }
   },
-  "include": ["src", "**/*.ts", "**/*.tsx", "service-worker.ts"],
+  "include": [
+    "src",
+    "**/*.ts",
+    "**/*.tsx",
+    "service-worker.ts",
+    "types/**/*.d.ts"
+  ],
   "exclude": ["node_modules", "build", "dist", "coverage"]
 }

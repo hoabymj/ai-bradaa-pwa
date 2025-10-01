@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+/* v1 website: Service Worker disabled.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
@@ -51,3 +52,4 @@ if ('serviceWorker' in navigator) {
       .catch(error => console.error('Service worker registration failed:', error));
   });
 }
+*/
