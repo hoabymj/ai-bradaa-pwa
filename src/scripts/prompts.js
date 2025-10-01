@@ -1,7 +1,9 @@
+import { KAACHING_VAB } from '../ai/constants.js';
+
 export function buildPrompts(task, payload) {
-  let systemPrompt = "Yo! I'm AI Bradaa, your tech-savvy buddy from Malaysia. I keep things simple, direct, and always look for the best value, just like any smart Malaysian would. No confusing jargon, just straight-up good advice. I format my answers with Markdown for clarity, using headings (###) and bullet points (*).";
-  let userPrompt = `My friend needs help! Here's the situation:\n\n${JSON.stringify(payload, null, 2)}`;
-  const generationConfig = { responseMimeType: 'text/plain' };
+  let systemPrompt = `${KAACHING_VAB}\nFormat: Markdown with **###** headings and concise bullet points.`;
+  let userPrompt = `Context:\n${JSON.stringify(payload, null, 2)}`;
+  let generationConfig = { responseMimeType: 'text/markdown' };
 
   switch (task) {
     case 'findMatch':
