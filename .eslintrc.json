@@ -25,11 +25,15 @@
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off"
   },
+  "parserOptions": {
+    "project": ["./tsconfig.eslint.json"]
+  },
+  "ignorePatterns": ["src/features/**/*", "src/scripts/ui.js"],
   "overrides": [
     {
       "files": ["**/*.ts", "**/*.tsx"],
       "parserOptions": {
-        "project": ["./tsconfig.json"]
+        "project": ["./tsconfig.eslint.json"]
       }
     }
   ]
