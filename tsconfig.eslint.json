@@ -1,10 +1,15 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false
+  },
   "include": [
     "netlify/**/*.js",
     "scripts/**/*.js",
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    "src/**/*.js"
   ],
   "exclude": [
     "node_modules",
