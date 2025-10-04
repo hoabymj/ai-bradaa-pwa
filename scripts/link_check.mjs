@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const ROOT = process.cwd();
 const LEGACY_PATTERNS = [/\/lib\/ui\//, /\\lib\\ui\\/, /\/lib\/ai\//, /\\lib\\ai\\/];
+const IGNORES = [/\.md$/i, /index\.html\./i]; // ignore docs and backup HTML snapshots
 let bad = 0;
 
 function walk(dir){
@@ -12,6 +13,7 @@ function walk(dir){
     const p = path.join(dir, e.name);
     if (e.isDirectory()) walk(p);
     else {
+      if (IGNORES.some(rx => rx.test(e.name))) continue;
       const s = fs.readFileSync(p,'utf8');
       for (const rx of LEGACY_PATTERNS){
         if (rx.test(s)) { console.error('[link_check] legacy path in', p); bad++; break; }
