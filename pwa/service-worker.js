@@ -1,8 +1,8 @@
 const CACHE_NAME = 'ai-bradaa-v2';
 const OFFLINE_URLS = [
   '/',
-  '/index.html',
-  '/manifest.json',
+  '/app/index.html',
+  '/pwa/manifest.json',
   '/data/laptops.json',
   '/icons/icon-32.png',
   '/icons/icon-64.png',
@@ -56,7 +56,7 @@ self.addEventListener('fetch', event => {
       .catch(() => {
         // Fallback to cache, then to index.html for SPA routing
         return caches.match(request)
-          .then(match => match || caches.match('/index.html'));
+          .then(match => match || caches.match('/app/index.html'));
       })
   );
 });

@@ -41,15 +41,12 @@ function main() {
 
   const assetsToCopy = [
     'index.html',
-    'manifest.json',
-    'service-worker.js',
-    'service-worker.ts',
-    'workbox-config.js',
-    'AI-Bradaa-Laptop',
-    'features',
-    'src',
-    'data',
-    '__tests__'
+    '_redirects',
+    'app',
+    'pwa',
+    'icons',
+    'ai',
+    'data'
   ];
 
   assetsToCopy.forEach(item => {
