@@ -1,14 +1,9 @@
 /**
  * Gemini AI proxy with strict CORS, retry, and PDPA-safe logging
  */
-const ALLOWED_ORIGINS = [
-  process.env.URL,
-  process.env.DEPLOY_URL,
-  'http://localhost:8888'
-].filter(Boolean);
-
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const getJitter = () => Math.floor(Math.random() * 200) + 200; // 200-400ms
+const DEFAULT_TIMEOUT = 65000; // 65s server-side
 
 exports.handler = async (event) => {
   // Environment check
@@ -25,23 +20,11 @@ exports.handler = async (event) => {
   }
 
   const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin'
   };
-
-  // Strict CORS check
-  if (!event.headers.origin || !ALLOWED_ORIGINS.includes(event.headers.origin)) {
-    return {
-      statusCode: 403,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        error: 'origin_forbidden',
-        status: 403,
-        ts: new Date().toISOString()
-      })
-    };
-  }
-  corsHeaders['Access-Control-Allow-Origin'] = event.headers.origin;
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders };
@@ -52,62 +35,91 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { system, user, temperature = 0.2 } = JSON.parse(event.body);
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
+    const {
+      model = 'gemini-2.5-flash',
+      systemText = '',
+      userText,
+      json = false,
+      schema = null,
+      temperature = 0.7
+    } = JSON.parse(event.body || '{}');
+
+    if (!userText) {
+      return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'missing_userText', status: 400 }) };
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const response = await fetch(`${url}?key=${process.env.GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: user }] }],
-          generationConfig: { temperature }
-        })
-      });
+    // Build v1beta-compliant payload (no "role" in contents)
+    const requestBody = {
+      contents: [{ parts: [{ text: userText }] }],
+      generationConfig: { temperature }
+    };
+    
+    if (systemText) {
+      requestBody.systemInstruction = { parts: [{ text: systemText }] };
+    }
+    
+    if (json) {
+      requestBody.generationConfig.responseMimeType = 'application/json';
+      if (schema) requestBody.generationConfig.responseSchema = schema;
+    }
+    
+    // Up to 2 retries (total 3 attempts) on 429/5xx with exponential backoff
+    let attempt = 0;
+    for (; attempt < 3; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-goog-api-key': process.env.GEMINI_API_KEY
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+        clearTimeout(timer);
 
-      const data = await response.json();
-      
-      if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        let data;
+        try { data = await response.json(); } catch { data = null; }
+
+        if (response.ok) {
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          return {
+            statusCode: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+          };
+        }
+
+        if (response.status === 429 || response.status >= 500) {
+          if (attempt < 2) {
+            const backoff = (2 ** attempt) * 300 + getJitter();
+            await sleep(backoff);
+            continue;
+          }
+        }
+
+        // PDPA-safe error log
+        console.error({ type: 'ai_error', status: response.status, ts: new Date().toISOString() });
         return {
-          statusCode: 502,
+          statusCode: response.status,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            error: 'no_content',
-            status: 502,
-            ts: new Date().toISOString()
-          })
+          body: JSON.stringify({ error: 'ai_service_error', status: response.status, ts: new Date().toISOString() })
         };
+      } catch (err) {
+        clearTimeout(timer);
+        // Timeout or network error → return 504
+        if (attempt < 2) {
+          const backoff = (2 ** attempt) * 300 + getJitter();
+          await sleep(backoff);
+          continue;
+        }
+        console.error({ type: 'ai_error', status: 504, ts: new Date().toISOString() });
+        return { statusCode: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'gateway_timeout', status: 504 }) };
       }
-
-      if (response.ok) {
-        return {
-          statusCode: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: data.candidates[0].content.parts[0].text })
-        };
-      }
-
-      if (attempt < 1 && (response.status === 429 || response.status >= 500)) {
-        await sleep(getJitter());
-        continue;
-      }
-
-      // PDPA-safe error log
-      console.error({
-        type: 'ai_error',
-        status: response.status,
-        ts: new Date().toISOString()
-      });
-
-      return {
-        statusCode: response.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          error: 'ai_service_error',
-          status: response.status,
-          ts: new Date().toISOString()
-        })
-      };
     }
   } catch (error) {
     // PDPA-safe error log

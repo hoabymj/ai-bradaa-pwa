@@ -1,3 +1,10 @@
 # --- v1 WEBSITE ONLY: ignore legacy app code ---
 src/features/**
 src/scripts/ui.js
+service-worker.js
+lib/ui/*.js
+scripts/*.mjs
+tests/**/*.mjs
+pwa/service-worker.js
+tests/**/*.cjs
+ai/**/*.js
