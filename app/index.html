@@ -1175,7 +1175,7 @@ Output:
       const msToMidnight = dayMs - since + 5 * 60 * 1000; // +5min buffer
       window.__marketMidnightTimer = setTimeout(async () => {
         try {
-          const res = await fetch('data/laptops.json');
+          const res = await fetch('/data/laptops.json');
           if (res.ok) {
             const data = await res.json();
             SWR.set('laptops', data);
@@ -1198,7 +1198,7 @@ Output:
         if (cached) {
           STATE.data.allLaptops = cached;
         } else {
-          const response = await fetch('data/laptops.json');
+          const response = await fetch('/data/laptops.json');
           if (!response.ok) throw new Error('Local JSON not found.');
           const data = await response.json();
           STATE.data.allLaptops = data;
@@ -1210,7 +1210,7 @@ Output:
         } catch {}
         window.__marketRefreshTimer = setTimeout(async ()=>{
           try {
-            const res = await fetch('data/laptops.json');
+            const res = await fetch('/data/laptops.json');
             if (res.ok) {
               const data = await res.json();
               SWR.set('laptops', data);

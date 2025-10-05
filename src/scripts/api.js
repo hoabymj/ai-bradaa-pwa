@@ -12,7 +12,7 @@ export function buildAffiliateLink(originalUrl, platform) {
 
 export async function fetchMarketIntel() {
   try {
-    const response = await fetch('data/laptops.json');
+    const response = await fetch('/data/laptops.json');
     if (!response.ok) throw new Error('Local JSON not found.');
     STATE.data.allLaptops = await response.json();
   } catch (error) {

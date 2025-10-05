@@ -9,6 +9,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -27,6 +30,7 @@ jobs:
         continue-on-error: true
 
       - name: Deploy to Netlify
+        if: ${{ env.NETLIFY_AUTH_TOKEN != '' && env.NETLIFY_SITE_ID != '' }}
         uses: nwtgck/actions-netlify@v2.0
         with:
           publish-dir: '.'
@@ -35,8 +39,5 @@ jobs:
           deploy-message: "Deploy from GitHub Actions"
           enable-pull-request-comment: true
           enable-commit-comment: false
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         timeout-minutes: 5
         continue-on-error: true

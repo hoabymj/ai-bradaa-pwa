@@ -64,17 +64,25 @@
   function renderDots(dotsEl, n, go, getIdx){
     if (!dotsEl) return { update: ()=>{} };
     dotsEl.innerHTML = '';
+    try { dotsEl.setAttribute('role','tablist'); dotsEl.setAttribute('aria-label','Deck slides'); } catch {}
     for (let i=0;i<n;i++){
       const b = document.createElement('button');
       b.className = 'ai-dot';
+      b.setAttribute('role','tab');
+      b.setAttribute('tabindex', i===0 ? '0' : '-1');
       b.setAttribute('aria-label', `Go to slide ${i+1} of ${n}`);
       b.addEventListener('click', ()=>go(i));
+      b.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(i); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); const j=Math.min(n-1, i+1); dotsEl.children[j]?.focus(); go(j); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); const j=Math.max(0, i-1); dotsEl.children[j]?.focus(); go(j); }
+      });
       dotsEl.appendChild(b);
     }
     const update = () => {
       const k = getIdx();
       const ds = dotsEl.querySelectorAll('.ai-dot');
-      ds.forEach((d,j)=> d.setAttribute('aria-current', k===j ? 'true':'false'));
+      ds.forEach((d,j)=>{ d.setAttribute('aria-current', k===j ? 'true':'false'); d.setAttribute('tabindex', k===j ? '0' : '-1'); });
     };
     return { update };
   }
@@ -92,7 +100,7 @@
 
   function render(root, markdown, { dotsEl, stickyHeadEl=null, chips=null }={}){
     destroy(root);
-    try { root.classList.add('ai-deck__slides'); } catch {}
+    try { root.classList.add('ai-deck__slides'); root.setAttribute('role','region'); root.setAttribute('aria-roledescription','carousel'); root.setAttribute('aria-label','AI Bradaa deck'); } catch {}
     const sections = parseMarkdown(markdown);
     const html = sections.map((s, idx)=>{
       const title = escapeHTML(s.title||'');
@@ -223,6 +231,7 @@
     } catch {}
 
     go(0);
+    try { window.dispatchEvent(new CustomEvent('deck:ready', { detail: { slides: slides.length } })); } catch {}
     return { count: slides.length, destroy: ()=>destroy(root) };
   }
 
